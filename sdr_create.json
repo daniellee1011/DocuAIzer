@@ -1,0 +1,258 @@
+{
+  "meta": {
+    "template_name": "Generic-Company-SDR",
+    "template_version": "1.0",
+    "generated_at": "2025-08-11T13:00:00Z",
+    "author": "Jane Doe"
+  },
+  "sections": {
+    "purpose": {
+      "text": "This document defines software design requirements for the Telemetry Ingestion Service that collects device events, validates payloads, and publishes normalized records for downstream analytics and alerting. It targets low-latency write paths, high availability, and traceable test coverage."
+    },
+
+    "scope_assumptions": {
+      "in_scope": [
+        "REST ingestion endpoint for device events",
+        "Schema validation and enrichment pipeline",
+        "Publishing to Kafka topic 'telemetry.raw'"
+      ],
+      "out_of_scope": [
+        "User-facing dashboards",
+        "ML anomaly detection models"
+      ],
+      "assumptions": [
+        "Devices have stable network connectivity",
+        "Message size <= 1 MB"
+      ],
+      "dependencies": [
+        "Kafka cluster v3.6",
+        "Auth service (OIDC) endpoint",
+        "Central logging (OpenTelemetry collector)"
+      ]
+    },
+
+    "system_context": {
+      "text": "Devices send JSON events to the ingestion API. The service authenticates requests, validates schema, enriches metadata, and publishes to Kafka for downstream consumers.",
+      "diagram": {
+        "prompt": "C4 Level 1: Devices -> Ingestion API -> Kafka -> Consumers",
+        "mermaid": "graph LR; Device-->API; API-->Kafka; Kafka-->Consumers;"
+      }
+    },
+
+    "functional_requirements": {
+      "items": [
+        {
+          "ReqID": "REQ-FUNC-001",
+          "Description": "The system shall accept POST requests at /v1/ingest with a JSON body containing device telemetry.",
+          "Rationale": "Provide a consistent ingestion interface.",
+          "Priority": "High",
+          "AcceptanceCriteria": [
+            "200 OK for valid JSON payloads",
+            "400 Bad Request for schema violations",
+            "p95 response ≤ 200ms"
+          ],
+          "TraceTo": ["TC-101","TC-102"]
+        },
+        {
+          "ReqID": "REQ-FUNC-002",
+          "Description": "The system shall authenticate requests using Bearer tokens conforming to OIDC.",
+          "Rationale": "Ensure only authorized devices submit data.",
+          "Priority": "High",
+          "AcceptanceCriteria": [
+            "401 Unauthorized when token is missing or invalid",
+            "Token verification time ≤ 50ms"
+          ],
+          "TraceTo": ["TC-103"]
+        },
+        {
+          "ReqID": "REQ-FUNC-003",
+          "Description": "The system shall publish validated events to Kafka topic 'telemetry.raw'.",
+          "Rationale": "Enable downstream processing.",
+          "Priority": "Medium",
+            "AcceptanceCriteria": [
+            "Publishing success rate ≥ 99.9% over 24h window"
+          ],
+          "TraceTo": ["TC-104"]
+        },
+        {
+          "ReqID": "REQ-FUNC-004",
+          "Description": "The system shall reject payloads larger than 1 MB.",
+          "Rationale": "Protect service from oversized requests.",
+          "Priority": "Medium",
+          "AcceptanceCriteria": [
+            "413 Payload Too Large when size > 1 MB"
+          ],
+          "TraceTo": ["TC-105"]
+        },
+        {
+          "ReqID": "REQ-FUNC-005",
+          "Description": "The system shall validate payloads against the JSON schema v2 and return validation errors.",
+          "Rationale": "Data integrity.",
+          "Priority": "High",
+          "AcceptanceCriteria": [
+            "Schema validation time ≤ 20ms p95",
+            "Validation error details include path and reason"
+          ],
+          "TraceTo": ["TC-106"]
+        },
+        {
+          "ReqID": "REQ-FUNC-006",
+          "Description": "The system shall enrich events with server timestamp and device metadata.",
+          "Rationale": "Uniformity and downstream usability.",
+          "Priority": "Low",
+          "AcceptanceCriteria": [
+            "Enrichment adds fields: server_ts (RFC3339), device_region"
+          ],
+          "TraceTo": ["TC-107"]
+        },
+        {
+          "ReqID": "REQ-FUNC-007",
+          "Description": "The system shall return a unique request_id for every accepted request.",
+          "Rationale": "Traceability.",
+          "Priority": "Low",
+          "AcceptanceCriteria": [
+            "Response JSON includes request_id",
+            "request_id format matches UUID v4"
+          ],
+          "TraceTo": ["TC-108"]
+        },
+        {
+          "ReqID": "REQ-FUNC-008",
+          "Description": "The system shall expose a health endpoint /healthz for readiness checks.",
+          "Rationale": "Kubernetes integration.",
+          "Priority": "Low",
+          "AcceptanceCriteria": [
+            "GET /healthz returns 200 with status=ready when healthy"
+          ],
+          "TraceTo": ["TC-109"]
+        }
+      ]
+    },
+
+    "non_functional_requirements": {
+      "items": [
+        {
+          "ReqID": "REQ-NFR-001",
+          "Category": "Performance",
+          "Metric": "Latency (ms)",
+          "Target": "p95 ≤ 200 ms",
+          "Method": "k6 load test @ 500 req/s, 10 min warm-up",
+          "Rationale": "Responsive ingestion path",
+          "AcceptanceCriteria": ["p95 ≤ 200 ms under 500 req/s"],
+          "TraceTo": ["TC-201"]
+        },
+        {
+          "ReqID": "REQ-NFR-002",
+          "Category": "Availability",
+          "Metric": "Uptime (%)",
+          "Target": "≥ 99.95 %",
+          "Method": "Synthetic checks every 30s across 3 regions",
+          "Rationale": "SLA commitment",
+          "AcceptanceCriteria": ["Monthly uptime ≥ 99.95 %"],
+          "TraceTo": ["TC-202"]
+        },
+        {
+          "ReqID": "REQ-NFR-003",
+          "Category": "Security",
+          "Metric": "Vulnerability severity (CVSS)",
+          "Target": "No Critical, High fixed ≤ 14 d",
+          "Method": "Weekly SCA & container scans (Trivy)",
+          "Rationale": "Risk reduction",
+          "AcceptanceCriteria": ["High findings remediated ≤ 14 d"],
+          "TraceTo": ["TC-203"]
+        }
+      ]
+    },
+
+    "interfaces": {
+      "apis": [
+        {
+          "Name": "Ingest Telemetry",
+          "Method": "POST",
+          "Path": "/v1/ingest",
+          "Request": "JSON body adhering to schema v2; Bearer token in Authorization header",
+          "Response": "201 Created with request_id; 4xx on client errors; 5xx on server errors",
+          "Errors": ["400 Invalid schema", "401 Unauthorized", "413 Payload Too Large"],
+          "RateLimit": "100 req/s per device_id",
+          "Auth": "OIDC Bearer token"
+        }
+      ],
+      "signals": [
+        {
+          "Signal": "ALERT_LED",
+          "Dir": "OUT",
+          "Level": "3.3V logic high",
+          "Timing": "Blink 5 Hz on service degraded",
+          "ConnectorPin": "J12-3",
+          "Tolerance": "±5%",
+          "SafetyNotes": "Not for critical life-safety indication"
+        }
+      ]
+    },
+
+    "data_model": {
+      "diagram": "ER: device(id, region), event(id, device_id, payload, server_ts)",
+      "entities": [
+        {
+          "Entity": "event",
+[O          "fields": [
+            {"name": "id", "type": "uuid", "constraints": "primary key"},
+            {"name": "device_id", "type": "uuid", "constraints": "foreign key -> device.id"},
+            {"name": "payload", "type": "jsonb"},
+            {"name": "server_ts", "type": "timestamp", "constraints": "not null", "retention": "90d", "pii_sensitive": false}
+          ]
+        }
+      ]
+    },
+
+    "constraints_risks": {
+      "technical_constraints": [
+        "Max payload 1 MB",
+        "Single region Kafka in MVP"
+      ],
+      "regulatory_constraints": [
+        "PII handling must comply with company privacy policy"
+      ],
+      "known_risks": [
+        {
+          "description": "Kafka partition hot-spotting under uneven keys",
+          "mitigation": "Key by device_id; enable partitioner randomization",
+          "severity": "Medium",
+          "owner": "Platform Team"
+        }
+      ]
+    },
+
+    "verification_validation": {
+      "tests": [
+        {
+          "TestID": "TC-101",
+          "ReqID": "REQ-FUNC-001",
+          "Type": "Integration",
+          "Procedure": "POST valid JSON to /v1/ingest; expect 200; verify event in Kafka",
+          "Env": "staging",
+          "PassFailCriteria": "Event observed within 1 s in 'telemetry.raw'"
+        }
+      ]
+    },
+
+    "compliance_standards": {
+      "applicable_standards": ["ISO 27001", "SOC 2 Type II"],
+      "policies": ["Secure Coding Policy v3"],
+      "certification_plan": "Annual audits and pen tests"
+    },
+
+    "change_log": {
+      "entries": [
+        {
+          "Version": "0.1",
+          "Date": "2025-08-11",
+          "Author": "Jane Doe",
+          "Summary": "Initial draft",
+          "AffectedSections": ["purpose","functional_requirements","non_functional_requirements"]
+        }
+      ]
+    }
+  }
+}
+

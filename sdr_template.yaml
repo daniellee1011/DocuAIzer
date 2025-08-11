@@ -1,0 +1,68 @@
+# sdr_template.yaml
+meta:
+  name: "Generic-Company-SDR"
+  version: "1.0"
+  numbering: true                     # Auto-generate section and requirement numbers
+  req_id:
+    func_prefix: "REQ-FUNC"           # Prefix for Functional Requirements IDs
+    nfr_prefix:  "REQ-NFR"            # Prefix for Non-Functional Requirements IDs
+    pattern: "{prefix}-{num:03d}"     # e.g., REQ-FUNC-001
+    start: 1
+
+style:
+  tone: "concise, engineering, testable"
+  avoid_weasel_words: true            # Forbid vague terms like maybe, etc., appropriate
+  forbidden_phrases: ["TBD", "etc.", "as needed", "user-friendly"]
+  unit_rules:
+    require_units_for: ["time","throughput","latency","rate","size","temperature"]
+    examples: ["ms","s","%","req/s","MB/s","MB","°C"]
+  acceptance_criteria_rule: "Each requirement must have at least one measurable acceptance criterion (e.g., p95 response ≤ 200ms)."
+
+glossary:                              # Company glossary (optional)
+  - term: ""
+    definition: ""
+
+sections:
+  - id: "1"
+    title: "Purpose"
+    required: true
+    intent: "Summarize the document purpose and product/module goal in 3-5 sentences"
+    min_length: 80
+
+  - id: "2"
+    title: "Scope & Assumptions"
+    required: true
+    bullets: true
+    fields:
+      - "In Scope"
+      - "Out of Scope"
+      - "Assumptions"
+      - "Dependencies"
+
+  - id: "3"
+    title: "System Context"
+    required: true
+    includes_diagram: true
+    diagram_prompt: "C4 model Level 1: main external systems, users, data flow"
+
+  - id: "4"
+    title: "Functional Requirements"
+    required: true
+    table_schema:
+      columns: ["ReqID","Description","Rationale","Priority","AcceptanceCriteria","TraceTo(TestID)"]
+      column_rules:
+        ReqID: "Auto-generate: REQ-FUNC-###"
+        Description: "Describe from user/system perspective. No vague terms."
+        AcceptanceCriteria: "Include measurable metrics (p95 latency, error tolerance, success rate)"
+        Priority: ["High","Medium","Low"]
+    generation_rules:
+      min_items: 8
+      each_item_must_have_metrics: true
+
+  - id: "5"
+    title: "Non-Functional Requirements"
+    required: true
+    categories: ["Performance","Reliability","Availability","Security","Safety","Compliance","Usability","Maintainability","Scalability","Observability"]
+    table_schema:
+      columns: ["ReqID","Category","Metric","Target","Method(Measurement)","Rationale","TraceTo(TestID)"]
+

@@ -1,0 +1,362 @@
+{
+  "$id": "https://example.com/sdr_document.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Software Design Requirements (Generated JSON)",
+  "type": "object",
+  "required": ["meta", "sections"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["template_name", "template_version", "generated_at", "author"],
+      "properties": {
+        "template_name": { "type": "string" },
+        "template_version": { "type": "string" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "author": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "sections": {
+      "type": "object",
+      "required": [
+        "purpose",
+        "scope_assumptions",
+        "system_context",
+        "functional_requirements",
+        "non_functional_requirements",
+        "interfaces",
+        "constraints_risks",
+        "verification_validation",
+        "change_log"
+      ],
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "required": ["text"],
+          "properties": {
+            "text": { "type": "string", "minLength": 80 }
+          },
+          "additionalProperties": false
+        },
+
+        "scope_assumptions": {
+          "type": "object",
+          "required": ["in_scope", "out_of_scope", "assumptions", "dependencies"],
+          "properties": {
+            "in_scope": { "type": "array", "items": { "type": "string" } },
+            "out_of_scope": { "type": "array", "items": { "type": "string" } },
+            "assumptions": { "type": "array", "items": { "type": "string" } },
+            "dependencies": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+
+        "system_context": {
+          "type": "object",
+          "required": ["text"],
+          "properties": {
+            "text": { "type": "string" },
+            "diagram": {
+              "type": "object",
+              "required": ["prompt"],
+              "properties": {
+                "prompt": { "type": "string" },
+                "mermaid": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+
+        "functional_requirements": {
+          "type": "object",
+          "required": ["items"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "minItems": 8,
+              "items": { "$ref": "#/$defs/FunctionalRequirement" }
+            }
+          },
+          "additionalProperties": false
+        },
+
+        "non_functional_requirements": {
+          "type": "object",
+          "required": ["items"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/NonFunctionalRequirement" }
+            }
+          },
+          "additionalProperties": false
+        },
+
+        "interfaces": {
+          "type": "object",
+          "required": ["apis", "signals"],
+          "properties": {
+            "apis": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/API" }
+            },
+            "signals": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/Signal" }
+            }
+          },
+          "additionalProperties": false
+        },
+
+        "data_model": {
+          "type": "object",
+          "properties": {
+            "diagram": { "type": "string" },
+            "entities": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/DataEntity" }
+            }
+          },
+          "additionalProperties": false
+        },
+
+        "constraints_risks": {
+          "type": "object",
+          "required": ["technical_constraints", "regulatory_constraints", "known_risks"],
+          "properties": {
+            "technical_constraints": { "type": "array", "items": { "type": "string" } },
+            "regulatory_constraints": { "type": "array", "items": { "type": "string" } },
+            "known_risks": { "type": "array", "items": { "$ref": "#/$defs/RiskItem" } }
+          },
+          "additionalProperties": false
+        },
+
+        "verification_validation": {
+          "type": "object",
+          "required": ["tests"],
+          "properties": {
+            "tests": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/TestCase" }
+            }
+          },
+          "additionalProperties": false
+        },
+
+        "compliance_standards": {
+          "type": "object",
+          "properties": {
+            "applicable_standards": { "type": "array", "items": { "type": "string" } },
+            "policies": { "type": "array", "items": { "type": "string" } },
+            "certification_plan": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+
+        "change_log": {
+          "type": "object",
+          "required": ["entries"],
+          "properties": {
+            "entries": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/ChangeLogEntry" }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+
+  "$defs": {
+    "FunctionalRequirement": {
+      "type": "object",
+      "required": ["ReqID", "Description", "Priority", "AcceptanceCriteria"],
+      "properties": {
+        "ReqID": {
+          "type": "string",
+          "pattern": "^REQ-FUNC-\\d{3,}$"
+        },
+        "Description": {
+          "type": "string",
+          "minLength": 10,
+[O          "not": { "pattern": "\\b(TBD|etc\\.|as needed|user-friendly|maybe|appropriate)\\b" }
+        },
+        "Rationale": { "type": "string" },
+        "Priority": { "type": "string", "enum": ["High", "Medium", "Low"] },
+        "AcceptanceCriteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 5,
+            "pattern": "(\\d+\\s*(ms|s|%|req/s|MB/s|MB|°C))|([≤>=<]=?\\s*\\d+)"
+          }
+        },
+        "TraceTo": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^TC-\\d{3,}$" },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "NonFunctionalRequirement": {
+      "type": "object",
+      "required": ["ReqID", "Category", "Metric", "Target", "Method", "AcceptanceCriteria"],
+      "properties": {
+        "ReqID": {
+          "type": "string",
+          "pattern": "^REQ-NFR-\\d{3,}$"
+        },
+        "Category": {
+          "type": "string",
+          "enum": ["Performance","Reliability","Availability","Security","Safety","Compliance","Usability","Maintainability","Scalability","Observability"]
+        },
+        "Metric": {
+          "type": "string",
+          "minLength": 3,
+          "pattern": "\\b(ms|s|%|req/s|MB/s|MB|°C|ppm|dB|h|requests/min|QPS)\\b"
+        },
+        "Target": {
+          "type": "string",
+          "minLength": 2,
+          "pattern": "([≤>=<]=?\\s*\\d+\\s*(ms|s|%|req/s|MB/s|MB|°C|ppm|dB|h)?)|(MTBF\\s*≥\\s*\\d+\\s*h)"
+        },
+        "Method": { "type": "string", "minLength": 5 },
+        "Rationale": { "type": "string" },
+        "AcceptanceCriteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "(\\d+\\s*(ms|s|%|req/s|MB/s|MB|°C|ppm|dB|h))|([≤>=<]=?\\s*\\d+)"
+          }
+        },
+        "TraceTo": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^TC-\\d{3,}$" },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "API": {
+      "type": "object",
+      "required": ["Name","Method","Path","Request","Response"],
+      "properties": {
+        "Name": { "type": "string" },
+        "Method": { "type": "string", "enum": ["GET","POST","PUT","PATCH","DELETE","PUB","SUB"] },
+        "Path": { "type": "string", "minLength": 1 },
+        "Request": { "type": "string" },
+        "Response": { "type": "string" },
+        "Errors": { "type": "array", "items": { "type": "string" } },
+        "RateLimit": { "type": "string" },
+        "Auth": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "Signal": {
+      "type": "object",
+      "required": ["Signal","Dir","Level","Timing"],
+      "properties": {
+        "Signal": { "type": "string" },
+        "Dir": { "type": "string", "enum": ["IN","OUT","BIDIR"] },
+        "Level": { "type": "string" }, 
+        "Timing": { "type": "string" },
+        "ConnectorPin": { "type": "string" },
+        "Tolerance": { "type": "string" },
+        "SafetyNotes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "DataEntity": {
+      "type": "object",
+      "required": ["Entity","fields"],
+      "properties": {
+        "Entity": { "type": "string" },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name","type"],
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string" },
+              "constraints": { "type": "string" },
+              "pii_sensitive": { "type": "boolean" },
+              "retention": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "RiskItem": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": { "type": "string" },
+        "mitigation": { "type": "string" },
+        "severity": { "type": "string", "enum": ["Low","Medium","High","Critical"] },
+        "owner": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "TestCase": {
+      "type": "object",
+      "required": ["TestID","ReqID","Type","Procedure","Env","PassFailCriteria"],
+      "properties": {
+        "TestID": { "type": "string", "pattern": "^TC-\\d{3,}$" },
+        "ReqID": { "type": "string", "pattern": "^(REQ-FUNC|REQ-NFR)-\\d{3,}$" },
+        "Type": { "type": "string", "enum": ["Unit","Integration","System"] },
+        "Procedure": { "type": "string", "minLength": 5 },
+        "Env": { "type": "string", "minLength": 2 },
+        "PassFailCriteria": {
+          "type": "string",
+          "pattern": "(\\d+\\s*(ms|s|%|req/s|MB/s|MB|°C|ppm|dB|h))|([≤>=<]=?\\s*\\d+)"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "ChangeLogEntry": {
+      "type": "object",
+      "required": ["Version","Date","Author","Summary"],
+      "properties": {
+        "Version": { "type": "string" },
+        "Date": { "type": "string", "format": "date" },
+        "Author": { "type": "string" },
+        "Summary": { "type": "string" },
+        "AffectedSections": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "purpose","scope_assumptions","system_context","functional_requirements",
+              "non_functional_requirements","interfaces","data_model","constraints_risks",
+              "verification_validation","compliance_standards","change_log"
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+
+  "additionalProperties": false
+}
+
